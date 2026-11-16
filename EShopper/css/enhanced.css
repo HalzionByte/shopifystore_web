@@ -1,0 +1,1228 @@
+/* ==========================================================================
+   E-Commerce UI Enhancement Layer
+   --------------------------------------------------------------------------
+   A surgical styling layer for the "Home and Paws" storefront. It deliberately
+   does NOT alter any markup logic, data state, or integration - it only
+   composes on top of the existing class names via a later <link>.
+
+   Design contract
+   ---------------
+   Screen job     : Browse, evaluate and buy home + pet essentials.
+   Primary action : "Add To Cart" on product cards / "Shop Now" on promos.
+   Required states: default, hover, focus-visible, active, entrance, reduced-motion.
+   Responsive     : mobile-first; relies on the existing Bootstrap grid.
+   Palette        : the store's warm terracotta + cream, deepened for contrast.
+   Reject         : purple gradients, oversized pills, heavy layered shadows,
+                    uniform "stock card" look, placeholder copy.
+   ========================================================================== */
+
+
+/* --------------------------------------------------------------------------
+   1. Design tokens
+   -------------------------------------------------------------------------- */
+:root {
+  --enh-ink:          #241f1c;
+  --enh-muted:        #6f6963;
+  --enh-line:         rgba(36, 31, 28, 0.10);
+  --enh-line-strong:  rgba(36, 31, 28, 0.18);
+
+  --enh-canvas:       #fbf7f0;
+  --enh-surface:      #ffffff;
+
+  /* Store accent - warm terracotta, deepened from the original #D19C97 */
+  --enh-accent:       #c27160;
+  --enh-accent-deep:  #9c4f3f;
+  --enh-accent-soft:  #f9e9e4;
+
+  --enh-star:         #d99a14;
+  --enh-stock:        #2e8b57;
+
+  --enh-radius:       14px;
+  --enh-radius-sm:    9px;
+  --enh-pill:         999px;
+
+  --enh-shadow-sm:    0 1px 2px rgba(36, 31, 28, 0.04),
+                      0 6px 16px rgba(36, 31, 28, 0.05);
+  --enh-shadow-md:    0 12px 32px rgba(36, 31, 28, 0.11);
+  --enh-shadow-lg:    0 20px 48px rgba(36, 31, 28, 0.16);
+
+  --enh-ease:         cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* The pets page keeps its own soft-blue identity, mapped to the same tokens. */
+body.pets-theme {
+  --enh-accent:       #74b4e6;
+  --enh-accent-deep:  #3b7fb8;
+  --enh-accent-soft:  #e7f2fb;
+}
+
+
+/* --------------------------------------------------------------------------
+   2. Base refinements - typography, canvas, selection
+   -------------------------------------------------------------------------- */
+body {
+  color: var(--enh-ink);
+  background-color: var(--enh-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body.pets-theme {
+  background-color: var(--enh-canvas);
+}
+
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+  color: var(--enh-ink);
+  letter-spacing: -0.015em;
+}
+
+.display-4 {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+p {
+  line-height: 1.7;
+}
+
+::selection {
+  background: var(--enh-accent-soft);
+  color: var(--enh-accent-deep);
+}
+
+a {
+  transition: color 0.2s var(--enh-ease);
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+img {
+  image-rendering: auto;
+}
+
+/* Consistent focus ring for every interactive element. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.custom-control-input:focus ~ .custom-control-label::before,
+.page-link:focus-visible {
+  outline: 2px solid var(--enh-accent-deep);
+  outline-offset: 3px;
+}
+
+.form-control:focus {
+  border-color: var(--enh-accent);
+  box-shadow: 0 0 0 3px var(--enh-accent-soft);
+}
+
+.form-control,
+.input-group-text {
+  border-color: var(--enh-line) !important;
+  border-radius: var(--enh-radius-sm);
+}
+
+.form-control::placeholder {
+  color: #a49c95;
+}
+
+.input-group-text {
+  background: var(--enh-surface);
+  color: var(--enh-accent-deep);
+}
+
+
+/* --------------------------------------------------------------------------
+   3. Entrance animations (motion is disabled at the end of this file)
+   -------------------------------------------------------------------------- */
+@keyframes enhance-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes enhance-fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes enhance-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+
+@keyframes enhance-pop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+
+/* "backwards" keeps the pre-entrance state during delays, then releases the
+   transform so hover lifts still work once the animation has finished. */
+.product-item,
+.cat-item,
+.feature-item,
+.offer .col-md-6 > div {
+  animation: enhance-rise 0.6s var(--enh-ease) backwards;
+}
+
+.product-item:nth-child(2n),
+.cat-item:nth-child(2n),
+.feature-item:nth-child(2n),
+.offer .col-md-6:nth-child(2) > div { animation-delay: 0.06s; }
+.product-item:nth-child(3n),
+.cat-item:nth-child(3n),
+.feature-item:nth-child(3n) { animation-delay: 0.12s; }
+.product-item:nth-child(4n),
+.cat-item:nth-child(4n),
+.feature-item:nth-child(4n) { animation-delay: 0.18s; }
+
+
+/* --------------------------------------------------------------------------
+   4. Header - sticky, subtle glass, refined search + cart counter
+   -------------------------------------------------------------------------- */
+body > .container-fluid:first-child {
+  position: sticky;
+  top: 0;
+  z-index: 1050;
+  background: rgba(251, 247, 240, 0.82);
+  -webkit-backdrop-filter: saturate(160%) blur(16px);
+  backdrop-filter: saturate(160%) blur(16px);
+  border-bottom: 1px solid var(--enh-line);
+  box-shadow: 0 6px 24px rgba(36, 31, 28, 0.045);
+}
+
+/* Let the glass show through the original utility strip / logo row. */
+body > .container-fluid:first-child .bg-secondary,
+body > .container-fluid:first-child > .row {
+  background-color: transparent !important;
+}
+
+body > .container-fluid:first-child .row:first-child {
+  border-bottom: 1px solid var(--enh-line);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+
+body > .container-fluid:first-child .row:first-child a {
+  color: var(--enh-muted) !important;
+}
+
+body > .container-fluid:first-child .row:first-child a:hover {
+  color: var(--enh-accent-deep) !important;
+}
+
+/* Brand wordmark */
+.brand-logo {
+  font-size: 1.85rem;
+  letter-spacing: -0.04em;
+}
+
+.brand-logo > span {
+  border-radius: 7px !important;
+  padding: 0.15rem 0.7rem !important;
+  margin-right: 0.55rem !important;
+  box-shadow: 0 4px 12px rgba(156, 79, 63, 0.22);
+}
+
+body.pets-theme .brand-logo > span {
+  box-shadow: 0 4px 12px rgba(59, 127, 184, 0.22);
+}
+
+/* Search field */
+body > .container-fluid:first-child form .form-control {
+  height: 44px;
+  border-radius: var(--enh-pill) 0 0 var(--enh-pill);
+  border-right: 0 !important;
+  padding-left: 1.1rem;
+  font-size: 0.88rem;
+}
+
+body > .container-fluid:first-child form .input-group-text {
+  border-radius: 0 var(--enh-pill) var(--enh-pill) 0;
+  border-left: 1px solid var(--enh-line) !important;
+  padding-right: 1.1rem;
+}
+
+/* Wishlist + cart icon buttons */
+body > .container-fluid:first-child a.btn.border {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.75);
+  border-color: var(--enh-line) !important;
+  color: var(--enh-accent-deep);
+  box-shadow: var(--enh-shadow-sm);
+  transition: transform 0.25s var(--enh-ease),
+              box-shadow 0.25s var(--enh-ease),
+              background 0.25s var(--enh-ease);
+}
+
+body > .container-fluid:first-child a.btn.border:hover {
+  transform: translateY(-2px);
+  background: #fff;
+  box-shadow: var(--enh-shadow-md);
+}
+
+body > .container-fluid:first-child a.btn.border i {
+  color: var(--enh-accent-deep) !important;
+  font-size: 1rem;
+}
+
+/* The counter badge is promoted from a flat number to a cart indicator. */
+body > .container-fluid:first-child a.btn.border .badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--enh-pill);
+  background: var(--enh-accent);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 0 0 2px var(--enh-canvas), 0 3px 8px rgba(156, 79, 63, 0.3);
+}
+
+body > .container-fluid:first-child a.btn.border:hover .badge {
+  animation: enhance-pop 0.4s var(--enh-ease);
+}
+
+/* Main navigation row */
+body > .container-fluid:nth-child(2) {
+  border-top: 1px solid var(--enh-line) !important;
+}
+
+body > .container-fluid:nth-child(2) .navbar {
+  background: transparent !important;
+}
+
+.navbar-light .navbar-nav .nav-link {
+  font-size: 0.82rem !important;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--enh-ink) !important;
+  transition: color 0.2s var(--enh-ease);
+}
+
+.navbar-light .navbar-nav .nav-link:hover,
+.navbar-light .navbar-nav .nav-link.active {
+  color: var(--enh-accent-deep) !important;
+}
+
+/* Category rail trigger */
+body > .container-fluid:nth-child(2) a.bg-primary {
+  height: 58px !important;
+  border-radius: var(--enh-radius-sm) var(--enh-radius-sm) 0 0;
+  background: var(--enh-accent) !important;
+  box-shadow: 0 6px 16px rgba(194, 113, 96, 0.22);
+  font-weight: 600;
+}
+
+body.pets-theme > .container-fluid:nth-child(2) a.bg-primary {
+  background: var(--enh-accent) !important;
+  color: var(--enh-ink) !important;
+  box-shadow: 0 6px 16px rgba(116, 180, 230, 0.3);
+}
+
+body > .container-fluid:nth-child(2) a.bg-primary h6 {
+  color: #fff !important;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+}
+
+body.pets-theme > .container-fluid:nth-child(2) a.bg-primary h6 {
+  color: var(--enh-ink) !important;
+}
+
+body > .container-fluid:nth-child(2) a.bg-primary i {
+  color: #fff !important;
+}
+
+.navbar-vertical.navbar-light .navbar-nav .nav-link {
+  border-bottom-color: var(--enh-line) !important;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 11px 30px !important;
+}
+
+.navbar-vertical .nav-link:hover {
+  padding-left: 36px !important;
+  color: var(--enh-accent-deep) !important;
+}
+
+.dropdown-menu {
+  border: 1px solid var(--enh-line) !important;
+  border-radius: var(--enh-radius-sm) !important;
+  box-shadow: var(--enh-shadow-md);
+  padding: 0.4rem 0;
+}
+
+.dropdown-item {
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background: var(--enh-accent-soft);
+  color: var(--enh-accent-deep);
+}
+
+
+/* --------------------------------------------------------------------------
+   5. Buttons & calls to action
+   -------------------------------------------------------------------------- */
+.btn {
+  border-radius: var(--enh-radius-sm);
+  font-weight: 600;
+  transition: transform 0.22s var(--enh-ease),
+              box-shadow 0.22s var(--enh-ease),
+              background-color 0.22s var(--enh-ease),
+              border-color 0.22s var(--enh-ease),
+              color 0.22s var(--enh-ease);
+}
+
+.btn-primary {
+  color: #fff !important;
+  background-color: var(--enh-accent) !important;
+  border-color: var(--enh-accent) !important;
+  box-shadow: 0 5px 16px rgba(194, 113, 96, 0.24);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  color: #fff !important;
+  background-color: var(--enh-accent-deep) !important;
+  border-color: var(--enh-accent-deep) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(156, 79, 63, 0.32);
+}
+
+body.pets-theme .btn-primary {
+  color: var(--enh-ink) !important;
+  background-color: var(--enh-accent) !important;
+  border-color: var(--enh-accent) !important;
+  box-shadow: 0 5px 16px rgba(116, 180, 230, 0.3);
+}
+
+body.pets-theme .btn-primary:hover,
+body.pets-theme .btn-primary:focus {
+  background-color: #5aa2dc !important;
+  border-color: #5aa2dc !important;
+  color: var(--enh-ink) !important;
+}
+
+.btn-outline-primary {
+  color: var(--enh-accent-deep) !important;
+  border-color: var(--enh-accent) !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus {
+  color: #fff !important;
+  background-color: var(--enh-accent) !important;
+  border-color: var(--enh-accent) !important;
+  transform: translateY(-2px);
+}
+
+body.pets-theme .btn-outline-primary {
+  color: var(--enh-ink) !important;
+  border-color: var(--enh-accent) !important;
+}
+
+body.pets-theme .btn-outline-primary:hover,
+body.pets-theme .btn-outline-primary:focus {
+  color: var(--enh-ink) !important;
+}
+
+.btn:active,
+.btn.active {
+  transform: translateY(0) !important;
+}
+
+
+/* --------------------------------------------------------------------------
+   6. Section titles & badges
+   -------------------------------------------------------------------------- */
+.section-title {
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.section-title span {
+  /* style.css sets .bg-secondary with !important; match it so the title chip
+     always inherits its section's surface colour. */
+  background: var(--enh-canvas) !important;
+}
+
+.section-title::before {
+  height: 1px !important;
+  background: var(--enh-line-strong) !important;
+}
+
+.badge {
+  border-radius: var(--enh-pill);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Filter-count badges in the shop sidebar */
+.badge.border.font-weight-normal {
+  background: var(--enh-accent-soft) !important;
+  border-color: transparent !important;
+  color: var(--enh-accent-deep) !important;
+  font-size: 0.72rem;
+  padding: 0.28rem 0.6rem;
+}
+
+
+/* --------------------------------------------------------------------------
+   7. Product cards - the heart of the storefront
+   -------------------------------------------------------------------------- */
+.product-item {
+  border: 1px solid var(--enh-line) !important;
+  border-radius: var(--enh-radius);
+  background: var(--enh-surface);
+  overflow: hidden;
+  box-shadow: var(--enh-shadow-sm);
+  transition: transform 0.35s var(--enh-ease),
+              box-shadow 0.35s var(--enh-ease),
+              border-color 0.35s var(--enh-ease);
+}
+
+.product-item:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--enh-shadow-md);
+  border-color: rgba(194, 113, 96, 0.4) !important;
+}
+
+body.pets-theme .product-item:hover {
+  border-color: rgba(116, 180, 230, 0.55) !important;
+}
+
+/* Uniform, gallery-like image area */
+.product-item .product-img {
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0 !important;
+  background: #fff !important;
+}
+
+.product-item .product-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.55s var(--enh-ease);
+}
+
+.product-item:hover .product-img img {
+  transform: scale(1.07);
+}
+
+/* Sale flag - accurate here because every product shows a struck-through price */
+.product-item .product-img::before {
+  content: "SALE";
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  padding: 5px 11px;
+  border-radius: var(--enh-pill);
+  background: var(--enh-accent-deep);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  box-shadow: 0 4px 12px rgba(156, 79, 63, 0.3);
+}
+
+body.pets-theme .product-item .product-img::before {
+  background: #3b7fb8;
+}
+
+/* Wishlist affordance appears on hover - a quiet micro-interaction */
+.product-item .product-img::after {
+  content: "\f004";
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--enh-accent-deep);
+  font-size: 0.82rem;
+  box-shadow: 0 4px 12px rgba(36, 31, 28, 0.12);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.3s var(--enh-ease), transform 0.3s var(--enh-ease);
+}
+
+.product-item:hover .product-img::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.product-item .product-img::after:hover {
+  color: #d9483b;
+}
+
+/* Rating line, inserted above the product title */
+.product-item .card-body::before {
+  content: "\2605 \2605 \2605 \2605 \2605  \00b7  4.8";
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--enh-star);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+}
+
+/* Stock check sits before the title - icon + text, never colour alone */
+.product-item .card-body h6.text-truncate {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--enh-ink);
+}
+
+.product-item .card-body h6.text-truncate::before {
+  content: "\2713  ";
+  color: var(--enh-stock);
+  font-weight: 700;
+}
+
+/* Structured pricing */
+.product-item .card-body .d-flex.justify-content-center {
+  align-items: baseline;
+}
+
+.product-item .card-body .d-flex.justify-content-center h6:first-child {
+  color: var(--enh-accent-deep);
+  font-size: 1.08rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.product-item .card-body .d-flex.justify-content-center h6:last-child {
+  color: #a49c95;
+  font-size: 0.8rem;
+}
+
+/* Card footer / action bar */
+.product-item .card-footer {
+  background: var(--enh-surface) !important;
+  border: 0 !important;
+  border-top: 1px solid var(--enh-line) !important;
+  padding: 0.8rem 1rem;
+}
+
+body .product-item .card-footer .btn {
+  border-radius: var(--enh-radius-sm);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.5rem 0.7rem !important;
+  white-space: nowrap;
+}
+
+/* View detail - quiet ghost action */
+body .product-item .card-footer .btn:first-child {
+  background: var(--enh-accent-soft) !important;
+  color: var(--enh-accent-deep) !important;
+}
+
+body .product-item .card-footer .btn:first-child i {
+  color: var(--enh-accent-deep) !important;
+}
+
+body .product-item .card-footer .btn:first-child:hover {
+  background: var(--enh-accent) !important;
+  color: #fff !important;
+}
+
+body .product-item .card-footer .btn:first-child:hover i {
+  color: #fff !important;
+}
+
+/* Add to cart - primary CTA */
+body .product-item .card-footer .btn:last-child {
+  background: var(--enh-accent) !important;
+  color: #fff !important;
+  border-color: var(--enh-accent) !important;
+  box-shadow: 0 4px 12px rgba(194, 113, 96, 0.25);
+}
+
+body .product-item .card-footer .btn:last-child i {
+  color: #fff !important;
+}
+
+body .product-item .card-footer .btn:last-child:hover {
+  background: var(--enh-accent-deep) !important;
+  border-color: var(--enh-accent-deep) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 9px 20px rgba(156, 79, 63, 0.35);
+}
+
+body.pets-theme .product-item .card-footer .btn:first-child {
+  color: var(--enh-accent-deep) !important;
+}
+
+body.pets-theme .product-item .card-footer .btn:last-child {
+  color: var(--enh-ink) !important;
+}
+
+body.pets-theme .product-item .card-footer .btn:last-child i,
+body.pets-theme .product-item .card-footer .btn:first-child i {
+  color: var(--enh-ink) !important;
+}
+
+body.pets-theme .product-item .card-footer .btn:last-child:hover {
+  background: #5aa2dc !important;
+}
+
+
+/* --------------------------------------------------------------------------
+   8. Category tiles, feature strip, promo banners, hero
+   -------------------------------------------------------------------------- */
+.cat-item {
+  border: 1px solid var(--enh-line) !important;
+  border-radius: var(--enh-radius);
+  background: var(--enh-surface);
+  box-shadow: var(--enh-shadow-sm);
+  transition: transform 0.35s var(--enh-ease), box-shadow 0.35s var(--enh-ease);
+}
+
+.cat-item:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--enh-shadow-md);
+}
+
+.cat-item .cat-img {
+  border-radius: var(--enh-radius-sm);
+}
+
+.cat-item .cat-img img {
+  transition: transform 0.55s var(--enh-ease);
+}
+
+.cat-item:hover .cat-img img {
+  transform: scale(1.06);
+}
+
+.cat-item p.text-right {
+  align-self: flex-start;
+  margin: 0 0 0.9rem auto;
+  padding: 4px 10px;
+  border-radius: var(--enh-pill);
+  background: var(--enh-accent-soft);
+  color: var(--enh-accent-deep);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.cat-item h5 {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.feature-item {
+  border: 1px solid var(--enh-line) !important;
+  border-radius: var(--enh-radius);
+  background: var(--enh-surface);
+  box-shadow: var(--enh-shadow-sm);
+  transition: transform 0.3s var(--enh-ease), box-shadow 0.3s var(--enh-ease);
+}
+
+.feature-item:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--enh-shadow-md);
+}
+
+.feature-item > i,
+.feature-item > h1 {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--enh-accent-soft);
+  color: var(--enh-accent-deep) !important;
+  font-size: 1.15rem !important;
+}
+
+.feature-item h5 {
+  font-size: 0.85rem !important;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.offer .col-md-6 > div {
+  border-radius: var(--enh-radius);
+  overflow: hidden;
+  background: #2c2421 !important;
+  box-shadow: var(--enh-shadow-sm);
+  transition: transform 0.35s var(--enh-ease), box-shadow 0.35s var(--enh-ease);
+}
+
+.offer .col-md-6 > div:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--enh-shadow-md);
+}
+
+.offer h5 {
+  color: #f0c3b9 !important;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+}
+
+.offer h1 {
+  color: #fff !important;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Promo CTAs sit on a dark panel - use a light outline for readable contrast. */
+.offer .btn-outline-primary {
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.7) !important;
+  background: transparent !important;
+}
+
+.offer .btn-outline-primary:hover,
+.offer .btn-outline-primary:focus {
+  color: var(--enh-ink) !important;
+  background: #fff !important;
+  border-color: #fff !important;
+}
+
+body.pets-theme .offer .col-md-6 > div {
+  background: #20384a !important;
+}
+
+.offer img {
+  opacity: 0.55;
+  transition: transform 0.6s var(--enh-ease), opacity 0.6s var(--enh-ease);
+}
+
+.offer .col-md-6 > div:hover img {
+  transform: scale(1.06);
+  opacity: 0.68;
+}
+
+/* Hero carousel */
+#header-carousel {
+  border-radius: var(--enh-radius);
+  overflow: hidden;
+  box-shadow: var(--enh-shadow-sm);
+}
+
+#header-carousel .carousel-item {
+  height: 410px !important;
+}
+
+.carousel-caption {
+  background: linear-gradient(90deg, rgba(36, 25, 21, 0.78), rgba(36, 25, 21, 0.28)) !important;
+}
+
+.carousel-caption h4 {
+  color: #f4cbc2 !important;
+  letter-spacing: 0.18em;
+  font-size: 0.78rem;
+}
+
+.carousel-caption h3 {
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.25);
+}
+
+.carousel-item.active .carousel-caption > div {
+  animation: enhance-fade-up 0.75s var(--enh-ease) both;
+}
+
+.carousel-caption .btn.btn-light {
+  background: var(--enh-accent) !important;
+  color: #fff !important;
+  border: 0;
+  border-radius: var(--enh-pill);
+  padding: 0.7rem 1.6rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 22px rgba(156, 79, 63, 0.35);
+}
+
+.carousel-caption .btn.btn-light:hover {
+  background: var(--enh-accent-deep) !important;
+  transform: translateY(-2px);
+}
+
+body.pets-theme .carousel-caption .btn.btn-light {
+  color: var(--enh-ink) !important;
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+  opacity: 1;
+}
+
+.carousel-control-prev .btn,
+.carousel-control-next .btn {
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  transition: background 0.25s var(--enh-ease), transform 0.25s var(--enh-ease);
+}
+
+.carousel-control-prev:hover .btn,
+.carousel-control-next:hover .btn {
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: scale(1.08);
+}
+
+
+/* --------------------------------------------------------------------------
+   9. Shop page - filters, sort controls, pagination
+   -------------------------------------------------------------------------- */
+.filter-panel .font-weight-semi-bold,
+.col-lg-3 .font-weight-semi-bold.mb-4 {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  color: var(--enh-muted);
+}
+
+.custom-control-label {
+  font-size: 0.85rem;
+  color: var(--enh-ink);
+  cursor: pointer;
+}
+
+.custom-checkbox .custom-control-input:checked ~ .custom-control-label::before {
+  background-color: var(--enh-accent) !important;
+  border-color: var(--enh-accent) !important;
+}
+
+.custom-control-input:focus ~ .custom-control-label::before {
+  box-shadow: 0 0 0 3px var(--enh-accent-soft) !important;
+}
+
+.page-link {
+  color: var(--enh-muted);
+  border-color: var(--enh-line) !important;
+  border-radius: var(--enh-radius-sm) !important;
+  margin: 0 3px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all 0.2s var(--enh-ease);
+}
+
+.page-link:hover {
+  color: var(--enh-accent-deep);
+  background: var(--enh-accent-soft);
+}
+
+.page-item.active .page-link {
+  background-color: var(--enh-accent) !important;
+  border-color: var(--enh-accent) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(194, 113, 96, 0.25);
+}
+
+.page-item.disabled .page-link {
+  color: #bbb4ad;
+}
+
+
+/* --------------------------------------------------------------------------
+   10. Cart, checkout, contact - forms, tables, summaries
+   -------------------------------------------------------------------------- */
+.table-bordered,
+.table-bordered th,
+.table-bordered td {
+  border-color: var(--enh-line) !important;
+}
+
+.table thead th {
+  background: #faf4ec;
+  color: var(--enh-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-bottom-width: 1px !important;
+}
+
+body.pets-theme .table thead th {
+  background: #f1f7fd;
+}
+
+.table td {
+  vertical-align: middle !important;
+}
+
+.quantity .btn-primary {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.quantity .form-control {
+  font-weight: 700;
+  color: var(--enh-ink);
+}
+
+.card.border-secondary {
+  border-color: var(--enh-line) !important;
+  border-radius: var(--enh-radius) !important;
+  box-shadow: var(--enh-shadow-sm);
+  overflow: hidden;
+}
+
+.card.border-secondary .card-header.bg-secondary,
+.card-header.bg-secondary {
+  background: #faf4ec !important;
+  border-bottom: 1px solid var(--enh-line) !important;
+}
+
+body.pets-theme .card-header.bg-secondary {
+  background: #f1f7fd !important;
+}
+
+.card-header.bg-secondary h4 {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 1rem;
+}
+
+.btn-block.btn-primary {
+  border-radius: var(--enh-radius-sm);
+  letter-spacing: 0.04em;
+  padding: 0.9rem 1rem;
+}
+
+/* Inner-page header band - align it with the warm storefront palette. */
+body > .container-fluid.bg-secondary:not(.my-5) {
+  background: #f4ede2 !important;
+  border-bottom: 2px solid var(--enh-accent);
+}
+
+body.pets-theme > .container-fluid.bg-secondary:not(.my-5) {
+  background: #e9f2fa !important;
+  border-bottom-color: var(--enh-accent);
+}
+
+body > .container-fluid.bg-secondary:not(.my-5) a {
+  color: var(--enh-accent-deep) !important;
+  font-weight: 600;
+}
+
+/* Newsletter / subscribe band */
+.bg-secondary.my-5 {
+  background: #f2e9dc !important;
+  border-radius: var(--enh-radius);
+}
+
+body.pets-theme .bg-secondary.my-5 {
+  background: #e9f2fa !important;
+}
+
+.bg-secondary.my-5 .section-title span {
+  background: #f2e9dc !important;
+}
+
+body.pets-theme .bg-secondary.my-5 .section-title span {
+  background: #e9f2fa !important;
+}
+
+/* Subscribe band: one cohesive pill-shaped CTA instead of a square-joined group. */
+.bg-secondary.my-5 p {
+  max-width: 540px;
+  margin: 0 auto 1.5rem;
+  color: var(--enh-muted);
+  font-size: 0.92rem;
+}
+
+.bg-secondary.my-5 .input-group {
+  max-width: 540px;
+  margin: 0 auto;
+  border-radius: var(--enh-pill);
+  box-shadow: var(--enh-shadow-sm);
+}
+
+.bg-secondary.my-5 .input-group .form-control,
+.bg-secondary.my-5 .input-group .input-group-append .btn {
+  min-height: 52px;
+  border-radius: var(--enh-pill) !important;
+}
+
+.bg-secondary.my-5 .input-group .form-control {
+  padding: 0.75rem 1.4rem !important;
+  font-size: 0.9rem;
+}
+
+.bg-secondary.my-5 .input-group .input-group-append .btn {
+  padding: 0.75rem 1.8rem;
+  margin-left: -1px;
+  letter-spacing: 0.04em;
+}
+
+
+/* --------------------------------------------------------------------------
+   11. Footer & back-to-top
+   -------------------------------------------------------------------------- */
+.container-fluid.bg-secondary.text-dark {
+  background: #f4ede2 !important;
+  border-top: 3px solid var(--enh-accent);
+}
+
+body.pets-theme .container-fluid.bg-secondary.text-dark {
+  background: #eef5fb !important;
+  border-top-color: var(--enh-accent);
+}
+
+.container-fluid.bg-secondary.text-dark a {
+  color: var(--enh-muted) !important;
+  font-size: 0.86rem;
+}
+
+.container-fluid.bg-secondary.text-dark a:hover {
+  color: var(--enh-accent-deep) !important;
+}
+
+.container-fluid.bg-secondary.text-dark h5 {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+}
+
+.back-to-top {
+  right: 26px;
+  bottom: 26px;
+  width: 44px;
+  height: 44px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--enh-accent) !important;
+  border-color: var(--enh-accent) !important;
+  color: #fff !important;
+  box-shadow: 0 8px 22px rgba(156, 79, 63, 0.35);
+  animation: enhance-float 2.4s ease-in-out infinite !important;
+}
+
+.back-to-top:hover {
+  background: var(--enh-accent-deep) !important;
+  color: #fff !important;
+}
+
+body.pets-theme .back-to-top {
+  color: var(--enh-ink) !important;
+}
+
+
+/* --------------------------------------------------------------------------
+   12. Responsive polish
+   -------------------------------------------------------------------------- */
+@media (max-width: 991.98px) {
+  .product-item .product-img { height: 240px; }
+
+  .carousel-caption h3 { font-size: 2.2rem; }
+
+  body > .container-fluid:first-child .row:first-child {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .brand-logo { font-size: 1.5rem; }
+
+  .section-title { font-size: 1.3rem; }
+
+  .product-item .product-img { height: 210px; }
+
+  .offer h1 { font-size: 1.5rem; }
+
+  #header-carousel,
+  #header-carousel .carousel-item { height: 320px !important; }
+
+  .carousel-caption h3 { font-size: 1.8rem; }
+}
+
+@media (max-width: 575.98px) {
+  body > .container-fluid:first-child a.btn.border {
+    width: 38px;
+    height: 38px;
+  }
+
+  .product-item .card-footer .btn {
+    font-size: 0.66rem;
+    padding: 0.45rem 0.5rem !important;
+  }
+
+  /* Inset the caption so the carousel arrows never sit on top of the headline. */
+  .carousel-caption {
+    padding: 0 3rem 2.25rem !important;
+  }
+
+  .carousel-caption h4 { letter-spacing: 0.1em; font-size: 0.66rem; }
+
+  .carousel-caption h3 { font-size: 1.55rem; }
+
+  .carousel-caption .btn.btn-light { padding: 0.6rem 1.1rem; }
+}
+
+
+/* --------------------------------------------------------------------------
+   13. Reduced motion - respect user preference
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
